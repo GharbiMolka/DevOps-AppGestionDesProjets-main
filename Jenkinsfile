@@ -11,39 +11,38 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                git branch: 'main',
-                    url: 'https://github.com/GharbiMolka/DevOps-AppGestionDesProjets-main.git'
-            }
-        }
+        // Le checkout est fait automatiquement par "Pipeline script from SCM"
 
         stage('Tests unitaires') {
             steps {
-                sh 'mvn clean test'          // sous Windows : bat 'mvn clean test'
+                dir('backend') {
+                    sh 'mvn clean test'
+                }
             }
             post {
                 always {
-                    junit 'target/surefire-reports/*.xml'
+                    junit allowEmptyResults: true, testResults: 'backend/target/surefire-reports/*.xml'
                 }
             }
         }
 
         stage('Package') {
             steps {
-                sh 'mvn package -DskipTests' // génère le .jar dans target/
+                dir('backend') {
+                    sh 'mvn package -DskipTests'   // génère le .jar dans backend/target/
+                }
             }
         }
 
         stage('Archive') {
             steps {
-                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                archiveArtifacts artifacts: 'backend/target/*.jar', fingerprint: true
             }
         }
     }
 
     post {
-        success { echo 'Build réussi : livrable disponible dans target/' }
+        success { echo 'Build réussi : livrable disponible dans backend/target/' }
         failure { echo 'Échec du build' }
     }
 }
